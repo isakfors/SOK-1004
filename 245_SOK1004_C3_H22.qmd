@@ -55,29 +55,109 @@ library(httr)
 Vi bruker dataene fra [Tabell 0313: Konsumprisindeksen fra SSB](https://www.ssb.no/priser-og-prisindekser/konsumpriser/statistikk/konsumprisindeksen). Jeg laster ned ved hjelp av API. Se [brukerveiledningen](https://www.ssb.no/api/pxwebapi/_/attachment/inline/019c05e0-35ad-4757-87a0-ba7fbf4a68e2:46a164479bc10a67eee4b472cd891f001ca19da5/Api_brukerveiledning.pdf) her.
 
 ```{r}
+#hente inn dataset via JSON-spørring
 url <- "https://data.ssb.no/api/v0/no/table/03013/"
 
 query <- '{
   "query": [
     {
-      "code": "NACE2007",
+      "code": "Konsumgrp",
       "selection": {
-        "filter": "item",
+        "filter": "vs:CoiCop2016niva4",
         "values": [
-          "A-N"
-        ]
-      }
-    },
-    {
-      "code": "SyssGrp",
-      "selection": {
-        "filter": "item",
-        "values": [
-          "10-19",
-          "20-49",
-          "50-99",
-          "100-199",
-          "200-499"
+          "01.1.1",
+          "01.1.2",
+          "01.1.3",
+          "01.1.4",
+          "01.1.5",
+          "01.1.6",
+          "01.1.7",
+          "01.1.8",
+          "01.1.9",
+          "01.2.1",
+          "01.2.2",
+          "02.1.1",
+          "02.1.2",
+          "02.1.3",
+          "02.2.0",
+          "03.1.1",
+          "03.1.2",
+          "03.1.3",
+          "03.1.4",
+          "03.2.1",
+          "03.2.2",
+          "04.1.1",
+          "04.1.2",
+          "04.2.1",
+          "04.2.2",
+          "04.3.1",
+          "04.3.2",
+          "04.4.0",
+          "04.5.1",
+          "04.5.3",
+          "04.5.4",
+          "04.5.5",
+          "05.1.1",
+          "05.1.2",
+          "05.2.0",
+          "05.3.1",
+          "05.3.2",
+          "05.3.3",
+          "05.4.0",
+          "05.5.1",
+          "05.5.2",
+          "05.6.1",
+          "05.6.2",
+          "06.1.1",
+          "06.1.2",
+          "06.1.3",
+          "06.2.1",
+          "06.2.2",
+          "06.2.3",
+          "07.1.1",
+          "07.1.2",
+          "07.1.3",
+          "07.2.1",
+          "07.2.2",
+          "07.2.3",
+          "07.2.4",
+          "07.3.1",
+          "07.3.2",
+          "07.3.3",
+          "07.3.4",
+          "08.1.0",
+          "08.2.0",
+          "08.3.0",
+          "09.1.1",
+          "09.1.2",
+          "09.1.3",
+          "09.1.4",
+          "09.1.5",
+          "09.2.1",
+          "09.2.2",
+          "09.3.1",
+          "09.3.2",
+          "09.3.3",
+          "09.3.4",
+          "09.4.1",
+          "09.4.2",
+          "09.5.1",
+          "09.5.2",
+          "09.5.4",
+          "09.6.0",
+          "11.1.1",
+          "11.1.2",
+          "11.2.0",
+          "12.1.1",
+          "12.1.2",
+          "12.1.3",
+          "12.3.1",
+          "12.3.2",
+          "12.4.0",
+          "12.5.2",
+          "12.5.4",
+          "12.6.2",
+          "12.7.0"
         ]
       }
     },
@@ -86,7 +166,8 @@ query <- '{
       "selection": {
         "filter": "item",
         "values": [
-          "FoUKostnader"
+          "KpiIndMnd",
+          "KpiVektMnd"
         ]
       }
     }
@@ -94,11 +175,8 @@ query <- '{
   "response": {
     "format": "json-stat2"
   }
-}
+}'
 
-hent_indeks.tmp <- url %>%
-  POST(body = query, encode = "json")'
-  
 hent_indeks.tmp <- url %>%
   POST(body = query, encode = "json")
 
@@ -123,12 +201,14 @@ Nå er det deres tur til å rydde. Slett variablene `year` og `month`. Gi variab
 **Hint.** Bruk `as.Date()` for å filtrere på datoer.
 
 ```{r}
+#fjerner year og month
 df <- df %>%
   select(-c(year, month))
 
 df_navn <- df %>%
   names() 
 
+#gir nye navn
 df <- df %>%
   rename(konsum = df_navn[1],
          var = df_navn[2],
@@ -136,6 +216,9 @@ df <- df %>%
 
 df <- df %>%
   filter(dato >= as.Date("2011-01-01"))
+
+var_navn <- df$var %>%
+  unique()
 ```
 
 # Oppgave III: Beregn et vektet gjennomsnitt
@@ -147,11 +230,6 @@ Vi skal nå beregne KPI som et vektet gjennomsnitt av konsumgruppene og sammenli
 Del vektene i `df` på 1000, og sjekk at de summerer seg til om lag `1` for hver måned. Hvor store avvik får du?
 
 ```{r}
-df_vekt <- df %>%
-  pivot_wider(names_from = konsumgruppe, values_from = verdi)
-
-df_vekt <- df_vekt %>%
-  df_vekt["konsumprisindeks (vekter)"]
 
 df_vekt <- df %>% 
   filter(var %in% last(var_navn)) %>%
@@ -160,7 +238,7 @@ df_vekt <- df %>%
 
 df <- df %>%
   filter(var %in% first(var_navn)) %>%
-  rbind(df_vekter)
+  rbind(df_vekt)
 
 test <- df %>%
   filter(var %in% last(var_navn)) %>%
@@ -170,7 +248,7 @@ test <- df %>%
 max <- max(test$sum)
 min <- min(test$sum)
 maxdiff <- max(c(abs(1-max),abs(1-min)))
-  
+
 ```
 
 ## Oppgave IIIb: Beregn prisindeksen fra gruppene med vekter
@@ -178,22 +256,22 @@ maxdiff <- max(c(abs(1-max),abs(1-min)))
 Beregn en totalindeks hvor dere bruker vektene og verdiene på prisindeks i formel $(1)$ fra oppgave I. Hvordan kan du vite om beregningen er riktig?
 
 ```{r}
-df_vekt <- df_vekt%>%  
+df_vekt <- df_vekt %>%  
   select(dato,konsum,verdi)%>%
   arrange(dato,konsum)
 
 df_indeks <- df %>%
-  filter(stat %in% first(stat_navn)) %>%
-  select(dato,gruppe,verdi) %>%
+  filter(var %in% first(var_navn)) %>%
+  select(dato,konsum,verdi) %>%
   mutate(verdi = replace(verdi,is.na(verdi),0))%>%
   arrange(dato,konsum)
 
 df_total <- df_indeks %>%
   select(dato,konsum) %>%
-  mutate(verdi = df_indeks$verdi*df_vekter$verdi) %>%
+  mutate(verdi = df_indeks$verdi*df_vekt$verdi) %>%
   group_by(dato) %>%
   summarize(verdi = sum(verdi)) %>%
-  mutate(gruppe = "KPI")
+  mutate(konsum = "KPI")
 
 rebaser <- 100/df_total$verdi[df_total$dato == as.Date("2015-06-01")]
 
