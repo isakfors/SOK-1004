@@ -106,56 +106,13 @@ Ifølge [SSBs Inntektsstatistikk for 2020](https://www.ssb.no/inntekt-og-forbru
 
 \(i\) Skriv en likning som beskriver husholdningens budsjettlinje hver uke med denne inntekten og disse prisene .
 
+-   $$
+    8500- 0.8x
+    $$
+
 \(ii\) Hva er helningen til budsjettlinjen, og hvordan tolkes denne?
 
-\(i\) Vi bruker samme formelen som i oppgave. 1a men endrer på tallene.
-
-$$
-K=\frac{U_0^{\frac{5}{4}}}{M^{\frac{1}{4}}} \hspace{1cm} (4)
-$$
-
-\(ii\)
-
-```{r}
-
-axes_1b <- ggplot(df, aes(x))+
-  labs(title="Husholdningens tilpasning", 
-    x="Mat",
-    y="Konsumgoder")+
-  theme(axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        panel.background = element_blank(), # hvit bakgrunn
-        axis.line = element_line(colour = "black"))+ # sett inn akselinjer
-  coord_fixed(ratio = 1)+ # lik skala for x og y aksen
-  scale_x_continuous(limits = c(0, 10500), expand = c(0, 0))+
-  scale_y_continuous(limits = c(0, 9000), expand = c(0, 0)) # begrense aksene
-# og sikre at akselinjene møttes i (0,0).
-
-# vi angir noen indifferenskurver
-
-I_0 <- function(x) (4000^(5/4))/x^(1/4) # nyttenivå 4000
-I_1 <- function(x) (4741^(5/4))/x^(1/4)
-I_2 <- function(x) (5500^(5/4))/x^(1/4)
-
-figur_1b <- axes_1b + 
-  stat_function(df,
-        fun=I_0,
-        mapping = aes()
-        ) +
-  stat_function(df,
-                fun=I_1,
-                mapping = aes()
-  ) +
-  stat_function(df,
-                fun=I_2,
-                mapping = aes()
-  )+
-  annotate("text",x=10000,y=1900, label="I_0")+
-  annotate("text",x=10000,y=2650, label="I_1")+
-  annotate("text",x=10000,y=3500, label="I_2")
-
-figur_1b
-```
+-   
 
 Får å finne helningen til budsjettlinjen bruker vi samme kode fra oppgave. 1a men med de verdiene vi har fått udelt i denne oppgaven. Vi kan se at helning er avtagene og har relativt lav helning. Vi kan tolke det som at siden andelen av prisen som er enheten mat er så stor at det ikke blir store endringer.
 
@@ -564,7 +521,7 @@ df_2 %>%
   
   + geom_smooth(se = FALSE) %>%
   
-  +labs(title="Konsumprisindeks får matvarer og alkholfri drikke over tid",
+  +labs(title="Konsum i vekter for matvarer og alkholfri drikke over tid",
        x="år",
        y="verdi") +
   theme_bw()
@@ -614,15 +571,43 @@ df_3 <-  hent_indeks.tmp %>%
 Vi skal sammenlikne disse seriene. For å gjøre dette må du transformere den første serien (I) til årlige observasjoner (beskriv hvordan du velger å gjøre dette), og (II) til prosent (fra promille). Plott seriene på samme figur med passende tittel, benevning på aksene, og legende.
 
 ```{r}
-#
+#filtrer ut hver 8. måned
+df_2$måned <- as.numeric(format(df_2$dato, "%m"))
 df_2 <- df_2 %>%
-  mutate(verdi = verdi/10)
+  filter(måned==08)
+df_2$år <- as.numeric(format(df_2$dato, "%Y"))
+df_2<- df_2 %>%
+  subset(select=-c(måned,dato)) %>%
+  mutate(verdi=verdi/10)
 
+# nye navn og gjør år om til numeriske verdier
+df_3 <- df_3 %>%
+  rename(konsumgruppe= `vare- og tjenestegruppe`) %>%
+  rename(kpi= statistikkvariabel) %>%
+  mutate(år=as.numeric(år))
+```
+
+```{r}
+t <- seq(1999, 2022, by = 3)
+ggplot()+
+  geom_point(data=df_2, aes(x=år, y=verdi), color="blue")+
+  geom_point(data=df_3, aes(x=år, y=value), color="black")+
+  geom_line(data=df_2, aes(x=år, y=verdi), color="blue")+
+  geom_line(data=df_3, aes(x=år, y=value), color="black")+
+  scale_x_continuous(breaks = t)+
+      labs(title="Sammenheng mellom KPI i vekter og Forbruksutgifter i prosent",
+       x="år",
+       y="verdi i prosent") +
+  theme_bw()
 ```
 
 \(i\) Hva viser figuren?
 
+-   
+
 \(ii\) Foreslå grunner til at disse to seriene avviker fra hverandre.
+
+-   
 
 \(iii\) Hvorfor gikk KPI-vektene for matvarer mye opp mellom 2010 og 2011? Hvordan har disse vektene utviklet seg fra 2011, og hvorfor?
 
@@ -632,52 +617,55 @@ En nyttig kilde her kan være [Nytt i konsumprisindeksen: Nasjonalregnskapet - 
 
 Vi skal se på effekten av en prisøkning på matvarer på husholdningens tilpasning.
 
+5100\^37
+
 ## **Oppgave 3a**
 
 Husholdningen fra oppgave 1 merker at prisen på mat øker fra 0,80 kr til 0,85 kr per enhet. Tegn en figur som viser den gamle og den nye tilpasningen. For å tegne figuren i R kan det være nyttig å vite at husholdningen kjøper nå 5100 enheter konsumgoder og 4000 enheter mat i den nye tilpasningen. Lag en ryddig figur som består av to indifferenskurver og to budsjettlinjer, og merk den gamle og den nye tilpasningen i figuren.
 
 ```{r}
+bud_2 <- function(x) 8500-1.25*x
 
-axes_3a <- ggplot(df, aes(x))+
-  labs(title="Husholdningens tilpasning", 
-    x="Mat",
-    y="Konsumgoder")+
-  theme(axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        panel.background = element_blank(), # hvit bakgrunn
-        axis.line = element_line(colour = "black"))+ # sett inn akselinjer
-  coord_fixed(ratio = 1)+ # lik skala for x og y aksen
-  scale_x_continuous(limits = c(0, 10500), expand = c(0, 0))+
-  scale_y_continuous(limits = c(0, 9000), expand = c(0, 0)) # begrense aksene
-# og sikre at akselinjene møttes i (0,0).
+I_1 <- function(x) (4627^(5/3))/x^(2/3)
+I_2 <- function(x) (5100^(5/3))/x^(2/3)
 
-# vi angir noen indifferenskurver
-
-I_0 <- function(x) (4000^(50/45))/x^(10/45) # nyttenivå 4000
-I_1 <- function(x) (4741^(50/45))/x^(10/45)
-I_2 <- function(x) (5500^(50/45))/x^(10/45)
-
-figur_3a <- axes_3a + 
-  stat_function(df,
-        fun=I_0,
-        mapping = aes()
-        ) +
+figur_1 <- axes_1 +
   stat_function(df,
                 fun=I_1,
-                mapping = aes()
-  ) +
+                mapping = aes()) +
   stat_function(df,
                 fun=I_2,
-                mapping = aes()
-  )+
-  annotate("text",x=10000,y=1900, label="I_0")+
-  annotate("text",x=10000,y=2650, label="I_1")+
-  annotate("text",x=10000,y=3500, label="I_2")
+                mapping = aes()) +
+  
+  annotate("text",x=10000, y=2650, label="I_1")
 
-figur_3a
 
-figur_3a <- figur_1b 
+bud_kompensering <- function(x) 8500-1.25*x
 
+figur_4  <- figur_1 +
+  stat_function(df, fun=bud_kompensering, 
+                mapping = aes())+
+  stat_function(df, fun=bud_1,
+                mapping = aes())+
+  stat_function(df, fun=bud_2,
+                mapping = aes())+
+annotate("text", x=8900,
+         y=1000, label="bud_1") +
+  geom_point(x=3251, y=6096) +
+  geom_point(x=4250, y=5100) +
+  geom_point(x=2720, y=5100) +
+  annotate("text", x=2500, y=4500, label="D") +
+  annotate("text", x=3300, y=6750, label="C") +
+  annotate("text", x=4500, y=5500, label="A") +
+  annotate("segment", x=4191, y=2500, xend=3248, yend=2500, colour="pink", size=0.5, arrow=arrow()) +
+  annotate("text", x=3700, y=1750, label="substitusjonseffekt (A-C)", size=3) +
+  annotate("segment", x=3248, y=1000, xend=2714, yend=1000, colour="grey", size=0.5, arrow=arrow()) +
+  annotate("segment", x=4191, y=7500, xend=2714, yend=7500, colour="blue", size=0.5, arrow=arrow()) +
+  annotate("text", x=3100, y=400, label="Innteksteffekt (C-D)", size=3) +
+  annotate("text", x=3700, y=8200, label="Total effekt (A-D", size=3)
+
+figur_4
+  
 ```
 
 ## **Oppgave 3b**
