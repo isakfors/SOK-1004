@@ -1,0 +1,275 @@
+# Instruksjoner
+
+Denne oppgaven skal løses interaktivt i RStudio ved å legge inn egen kode og kommentarer. Det ferdige dokumentet lagres med kandidatnummeret som navn `[kandidatnummer]_SOK1004_C5_H22.qmd` og lastes opp på deres GitHub-side. Hvis du har kandidatnummer 43, så vil filen hete `43_SOK1004_C5_H22.qmd`. Påse at koden kjører og at dere kan eksportere besvarelsen til pdf. Lever så lenken til GitHub-repositoriumet i Canvas.
+
+# Bakgrunn, læringsmål
+
+I [seminar 3, oppgave 3](https://uit-sok-1004-h22.github.io/seminar/s3.html) leste dere [kapittel 1 i NOU 2015:1](https://uit-sok-1004-h22.github.io/seminar/NOU%202015_%201%20kap%201%20(prod1).pdf) "Produktivitet - grunnlag for vekst og velferd." I denne oppgaven skal vi oppdatere tall brukt i analysen. Gjennom arbeidet vil dere repetere de grunnleggende ferdighetene i bruk av API, `tidyverse` og `ggplot` som vi har arbeidet med gjennom kurset. Dere vil også få anledning til å reflektere rundt sammenhengene i nasjonalregnskapet og å grave litt i statistikkbanken hos SSB.
+
+# Last inn pakker
+
+```{r}
+# output | false
+rm(list=ls()) 
+library(tidyverse)
+library(rjstat)
+library(httr)
+```
+
+# Oppgave I: Timeverksproduktivitet i markedsrettede fastlandsnæringer
+
+Reproduser en oppdatert versjon av Figur 1.1 "Timeverksproduktivitet, markedsrettede fastlandsnæringer" i rapporten. Her er produktivitet målt som bruttoprodukt i markedsrettet produksjon i Fastlands-Norge per timeverk, utenom bolig.
+
+## Oppgave Ia
+
+Hvorfor trekker Produktivitetskommisjon fra produksjonen av boligtjenester, offentlig etterspørsel, og inntekter fra olje og gass når de beregner produktivitet?
+
+-   Produktivitetskommisjon trekke fra ettersom produksjonen i offentlig sektor og boligtjenester ikke omsettes i markeder og derfor er produktivitetstallene i stor grad er basert på kostnader. Olje og gass er holdt utenfor ettersom en stor del av produksjonsverdien kan være grunnrente, og for å gi et bedre grunnlag for internasjonal sammenlignbarhet.
+
+## Oppgave Ib
+
+Skriv kode som bruker en JSON-spørring til å lage en oppdatert versjon av figuren, med observasjoner fra 1996 til 2021. Beregn gjennomsnittlig årlig endring for perioden 1996 - 2005 og, 2005-2013, og 2006 - 2021. Står konklusjonen i rapporten seg?
+
+**Merknad.** Det er tidvis store revisjoner i nasjonalregnskapet. Du må regne med at individuelle tall på årlig endring kan avvike en god del, opp til et halvt prosentpoeng, mens de gjennomsnittlige veksttallene burde avvike noe mindre.
+
+**Tips:** Du henter data på timeverk og bruttoprodukt fra henholdsvis tabell 09174 og 09170.
+
+```{r}
+url <- "https://data.ssb.no/api/v0/no/table/09174/"
+
+query <- '{
+  "query": [
+    {
+      "code": "NACE",
+      "selection": {
+        "filter": "vs:NRNaeringPubAgg",
+        "values": [
+          "nr23fn"
+        ]
+      }
+    },
+    {
+      "code": "ContentsCode",
+      "selection": {
+        "filter": "item",
+        "values": [
+          "Timeverk"
+        ]
+      }
+    },
+    {
+      "code": "Tid",
+      "selection": {
+        "filter": "item",
+        "values": [
+          "1995",
+          "1996",
+          "1997",
+          "1998",
+          "1999",
+          "2000",
+          "2001",
+          "2002",
+          "2003",
+          "2004",
+          "2005",
+          "2006",
+          "2007",
+          "2008",
+          "2009",
+          "2010",
+          "2011",
+          "2012",
+          "2013",
+          "2014",
+          "2015",
+          "2016",
+          "2017",
+          "2018",
+          "2019",
+          "2020",
+          "2021"
+        ]
+      }
+    }
+  ],
+  "response": {
+    "format": "json-stat2"
+  }
+}'
+  
+hent_indeks.tmp <- url %>%
+  POST(body = query, encode = "json")
+
+df_74 <-  hent_indeks.tmp %>%
+  content("text") %>%
+  fromJSONstat() %>%
+  as_tibble()
+```
+
+```{r}
+url <- "https://data.ssb.no/api/v0/no/table/09170/"
+
+query <- '{
+  "query": [
+    {
+      "code": "NACE",
+      "selection": {
+        "filter": "vs:NRNaeringPubAgg",
+        "values": [
+          "pub2X68B",
+          "nr23fn"
+        ]
+      }
+    },
+    {
+      "code": "ContentsCode",
+      "selection": {
+        "filter": "item",
+        "values": [
+          "BNPB2"
+        ]
+      }
+    },
+    {
+      "code": "Tid",
+      "selection": {
+        "filter": "item",
+        "values": [
+          "1995",
+          "1996",
+          "1997",
+          "1998",
+          "1999",
+          "2000",
+          "2001",
+          "2002",
+          "2003",
+          "2004",
+          "2005",
+          "2006",
+          "2007",
+          "2008",
+          "2009",
+          "2010",
+          "2011",
+          "2012",
+          "2013",
+          "2014",
+          "2015",
+          "2016",
+          "2017",
+          "2018",
+          "2019",
+          "2020",
+          "2021"
+        ]
+      }
+    }
+  ],
+  "response": {
+    "format": "json-stat2"
+  }
+}'
+  
+hent_indeks.tmp <- url %>%
+  POST(body = query, encode = "json")
+
+df_70 <-  hent_indeks.tmp %>%
+  content("text") %>%
+  fromJSONstat() %>%
+  as_tibble()
+```
+
+```{r}
+df_wide74 <- df_74 %>%
+  pivot_wider(names_from = statistikkvariabel, values_from = value)
+```
+
+```{r}
+df_wide70 <- df_70 %>%
+  pivot_wider(names_from = næring, values_from = value)
+
+df_wide70 <- df_wide70 %>%
+  mutate("markeds_utenbo" = `¬ Markedsrettet virksomhet Fastlands-Norge` - `Boligtjenester, egen bolig`)
+
+df_wide70 <- df_wide70 %>%
+  select(-c(`Boligtjenester, egen bolig`, `¬ Markedsrettet virksomhet Fastlands-Norge`, `år`))
+  
+```
+
+```{r}
+df_tot <- cbind(df_wide70, df_wide74)
+  
+
+df_tot_wide <- df_tot %>%
+  pivot_wider(names_from = statistikkvariabel, values_from = markeds_utenbo) %>%
+  pivot_wider(names_from = næring, values_from = `Utførte timeverk for lønnstakere og selvstendige (mill. timeverk)`)
+
+df_tot_wide <- df_tot_wide %>%
+  mutate(brutto_per_t = `Bruttoprodukt i basisverdi. Faste 2015-priser (mill. kr)` / `¬ Markedsrettet virksomhet Fastlands-Norge`)
+```
+
+```{r}
+options(digits = 4)
+df_tot_lag <- df_tot_wide %>%
+  mutate(lag_brutto_t = lag(brutto_per_t)) %>%
+  mutate(endringsprosent = ((brutto_per_t / lag_brutto_t)*100)-100)
+
+df_tot_lag
+
+ggplot(df_tot_lag, aes(x = år, y = endringsprosent)) +
+  geom_bar(stat="identity", fill = "pink") +
+  scale_x_discrete(breaks =c("1996", "1998", "2000", "2002", "2004", "2006", "2008", "2010", "2012", "2014", "2016", "2018", "2020"))
+```
+
+```{r}
+snitt_2005 <- df_tot_lag %>%
+  select(år, endringsprosent) %>%
+  filter(år <= 2005)
+
+snitt_2005[is.na(snitt_2005)] <- 0
+colMeans(snitt_2005[2])
+```
+
+```{r}
+snitt_2013 <- df_tot_lag %>%
+  select(år, endringsprosent) %>%
+  filter(år >= 2005) %>%
+  filter(år <= 2013)
+  
+  colMeans(snitt_2013[2])
+```
+
+```{r}
+snitt_2021 <- df_tot_lag %>%
+  select(år, endringsprosent) %>%
+  filter(år >= 2006) %>%
+  filter(år <= 2021)
+
+colMeans(snitt_2021[2])
+  
+```
+
+```{r}
+df_wide74 <- df_74 %>%
+  pivot_wider(names_from = statistikkvariabel, values_from = value)
+
+df_wide74 <- df_wide74 %>%
+  select(-c(næring))
+
+df_wide74 <- df_wide74 %>%
+  rename(bruttoprodukt = `Bruttoprodukt per utførte timeverk. Endring fra året før (prosent). Faste priser` ) %>%
+  rename(timeverk = `Utførte timeverk for lønnstakere. Endring fra året før (prosent)`)
+  
+df_wide74 <- df_wide74%>%
+mutate(arbeidsprod = bruttoprodukt - timeverk)
+```
+
+```{r}
+df_wide1 %>%
+  ggplot(aes(x = år, y = bruttoprodukt)) + 
+  geom_col() +
+  theme_bw() +
+  scale_x_discrete(breaks=c(1996, 1998, 2000, 2002, 2004, 2006, 2008, 2010, 2012, 2014, 2016, 2018, 2020))
+```
