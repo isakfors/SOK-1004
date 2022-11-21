@@ -250,26 +250,3 @@ snitt_2021 <- df_tot_lag %>%
 colMeans(snitt_2021[2])
   
 ```
-
-```{r}
-df_wide74 <- df_74 %>%
-  pivot_wider(names_from = statistikkvariabel, values_from = value)
-
-df_wide74 <- df_wide74 %>%
-  select(-c(næring))
-
-df_wide74 <- df_wide74 %>%
-  rename(bruttoprodukt = `Bruttoprodukt per utførte timeverk. Endring fra året før (prosent). Faste priser` ) %>%
-  rename(timeverk = `Utførte timeverk for lønnstakere. Endring fra året før (prosent)`)
-  
-df_wide74 <- df_wide74%>%
-mutate(arbeidsprod = bruttoprodukt - timeverk)
-```
-
-```{r}
-df_wide1 %>%
-  ggplot(aes(x = år, y = bruttoprodukt)) + 
-  geom_col() +
-  theme_bw() +
-  scale_x_discrete(breaks=c(1996, 1998, 2000, 2002, 2004, 2006, 2008, 2010, 2012, 2014, 2016, 2018, 2020))
-```
